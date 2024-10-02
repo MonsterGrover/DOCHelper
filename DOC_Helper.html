@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOC Helper</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        label {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="text"],
+        input[type="time"],
+        input[type="number"] {
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="time"]:focus,
+        input[type="number"]:focus {
+            border-color: #7f53ac;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #7f53ac;
+            background-image: linear-gradient(135deg, #7f53ac 0%, #647dee 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-image 0.3s ease, transform 0.1s ease;
+            margin-bottom: 15px;
+        }
+
+        button:hover {
+            background-image: linear-gradient(135deg, #647dee 0%, #7f53ac 100%);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .results {
+            margin-top: 30px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .results div {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 5px solid #7f53ac;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .additional-event {
+            margin-bottom: 20px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+
+        .additional-event h3 {
+            margin-bottom: 15px;
+            color: #7f53ac;
+        }
+
+        /* Timeline styles */
+        .timeline-container {
+            display: flex;
+            overflow-x: auto;
+            margin-top: 30px;
+            padding-bottom: 10px;
+        }
+
+        .timeline-item {
+            background-color: #fff;
+            color: #333;
+            padding: 15px;
+            margin-right: 20px;
+            border-radius: 10px;
+            min-width: 120px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.5s ease;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -10px;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            background-color: #7f53ac;
+            border-radius: 50%;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            body {
+                padding: 20px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>DOC Helper</h1>
+    <div class="container">
+        <div class="form-group">
+            <label for="startTime">Start Time</label>
+            <input type="time" id="startTime" value="21:00">
+        </div>
+        <div class="form-group">
+            <label for="eventTitle">Event Title</label>
+            <input type="text" id="eventTitle" placeholder="Enter event title" value="Event 1">
+        </div>
+        <div class="form-group">
+            <label for="numEvents">Number of Events</label>
+            <input type="number" id="numEvents" value="8" min="1">
+        </div>
+        <div class="form-group">
+            <label for="interval">Interval (hh:mm)</label>
+            <input type="text" id="interval" placeholder="e.g., 01:05" value="01:05">
+        </div>
+        <div id="additionalEventsContainer"></div>
+        <button id="addEventBtn">Add Additional Event</button>
+        <button id="calculateBtn">Calculate</button>
+        <button id="downloadBtn" disabled>Download CSV</button> <!-- New Download Button -->
+
+        <div class="results" id="results"></div>
+        <!-- Timeline container -->
+        <div class="timeline-container" id="timelineContainer"></div>
+    </div>
+
+    <script>
+        let eventCounter = 1;
+        let events = []; // Moved events array to global scope
+
+        // Function to add additional event inputs
+        function addAdditionalEvent() {
+            eventCounter++;
+            const container = document.getElementById('additionalEventsContainer');
+            const eventSection = document.createElement('div');
+            eventSection.className = 'additional-event';
+            eventSection.innerHTML = `
+                <h3>Event Set ${eventCounter}</h3>
+                <div class="form-group">
+                    <label for="eventTitle${eventCounter}">Event Title</label>
+                    <input type="text" id="eventTitle${eventCounter}" placeholder="Enter event title" value="Event ${eventCounter}">
+                </div>
+                <div class="form-group">
+                    <label for="numEvents${eventCounter}">Number of Events</label>
+                    <input type="number" id="numEvents${eventCounter}" value="5" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="interval${eventCounter}">Interval (hh:mm)</label>
+                    <input type="text" id="interval${eventCounter}" placeholder="e.g., 01:00" value="01:00">
+                </div>
+            `;
+            container.appendChild(eventSection);
+            // Smooth scroll to the new event section
+            eventSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Function to calculate all event times
+        function calculateTimes() {
+            const startTime = document.getElementById('startTime').value;
+            const resultsDiv = document.getElementById('results');
+            const timelineContainer = document.getElementById('timelineContainer');
+            resultsDiv.innerHTML = ''; // Clear previous results
+            timelineContainer.innerHTML = ''; // Clear previous timeline
+
+            events = []; // Reset events array
+            let currentHour, currentMinute;
+            let eventNumber = 1; // Global event counter
+
+            function calculateEventTimes(eventTitle, startHour, startMinute, numEvents, intervalHours, intervalMinutes) {
+                for (let i = 0; i < numEvents; i++) {
+                    startMinute += intervalMinutes;
+                    startHour += intervalHours + Math.floor(startMinute / 60);
+                    startMinute = startMinute % 60;
+                    startHour = startHour % 24;
+                    const timeString = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+                    events.push({ label: `${eventTitle} ${i + 1}`, time: timeString }); // Store event label and time
+                    eventNumber++;
+                }
+                currentHour = startHour;
+                currentMinute = startMinute;
+            }
+
+            // Initial event set
+            const eventTitle = document.getElementById('eventTitle').value || `Event 1`;
+            const numEvents = parseInt(document.getElementById('numEvents').value);
+            const interval = document.getElementById('interval').value;
+            let [intervalHours, intervalMinutes] = interval.split(':').map(Number);
+            let [startHour, startMinute] = startTime.split(':').map(Number);
+
+            // Validate initial inputs
+            if (isNaN(numEvents) || isNaN(intervalHours) || isNaN(intervalMinutes) || isNaN(startHour) || isNaN(startMinute)) {
+                alert('Please enter valid numbers for the initial event set.');
+                return;
+            }
+
+            // Calculate initial set of events
+            calculateEventTimes(eventTitle, startHour, startMinute, numEvents, intervalHours, intervalMinutes);
+
+            // Process additional event sets
+            for (let i = 2; i <= eventCounter; i++) {
+                const additionalEventTitle = document.getElementById(`eventTitle${i}`).value || `Event ${i}`;
+                const additionalNumEvents = parseInt(document.getElementById(`numEvents${i}`).value);
+                const additionalInterval = document.getElementById(`interval${i}`).value;
+                let [addIntervalHours, addIntervalMinutes] = additionalInterval.split(':').map(Number);
+
+                // Validate additional inputs
+                if (isNaN(additionalNumEvents) || isNaN(addIntervalHours) || isNaN(addIntervalMinutes)) {
+                    alert(`Please enter valid numbers for event set ${i}.`);
+                    return;
+                }
+
+                calculateEventTimes(additionalEventTitle, currentHour, currentMinute, additionalNumEvents, addIntervalHours, addIntervalMinutes);
+            }
+
+            // Display all events in the results div
+            events.forEach(event => {
+                const timeElement = document.createElement('div');
+                timeElement.textContent = `${event.label}: ${event.time}`; // Show event label and time
+                resultsDiv.appendChild(timeElement);
+
+                // Also display in the timeline
+                const timelineItem = document.createElement('div');
+                timelineItem.className = 'timeline-item';
+                timelineItem.innerHTML = `<strong>${event.label}</strong><br>${event.time}`;
+                timelineContainer.appendChild(timelineItem);
+            });
+
+            // Enable the download button
+            document.getElementById('downloadBtn').disabled = false;
+
+            // Smooth scroll to the results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Function to download events as CSV
+        function downloadCSV() {
+            if (events.length === 0) {
+                alert('No events to download. Please calculate the events first.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Event Label,Time\n"; // Header row
+
+            events.forEach(event => {
+                csvContent += `${event.label},${event.time}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            const currentDate = new Date().toISOString().slice(0, 10);
+            link.setAttribute('download', `events_${currentDate}.csv`);
+            document.body.appendChild(link); // Required for FF
+
+            link.click();
+            document.body.removeChild(link); // Clean up
+        }
+
+        // Event listeners for buttons
+        document.getElementById('addEventBtn').addEventListener('click', addAdditionalEvent);
+        document.getElementById('calculateBtn').addEventListener('click', calculateTimes);
+        document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+    </script>
+</body>
+
+</html>

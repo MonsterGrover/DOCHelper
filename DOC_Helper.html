@@ -421,6 +421,11 @@
         }
 
         // Function to show Gantt chart in a new tab
+        // Function to show Gantt chart in a new tab
+        // Function to show Gantt chart in a new tab
+        // Function to show Gantt chart in a new tab
+        // Function to show Gantt chart in a new tab
+        // Function to show Gantt chart in a new tab
         function showGanttChart() {
             if (events.length === 0) {
                 alert('No events to display. Please calculate the events first.');
@@ -430,153 +435,338 @@
             // Open a new window
             const ganttWindow = window.open('', '_blank');
 
-            // Calculate the time span
-            let startTime = events.reduce((earliest, event) => event.startDatetime < earliest ? event.startDatetime : earliest, events[0].startDatetime);
-            let endTime = events.reduce((latest, event) => event.endDatetime > latest ? event.endDatetime : latest, events[0].endDatetime);
+            // Calculate the earliest and latest times
+            let startTime = events.reduce(
+                (earliest, event) =>
+                    event.startDatetime < earliest ? event.startDatetime : earliest,
+                events[0].startDatetime
+            );
+            let endTime = events.reduce(
+                (latest, event) =>
+                    event.endDatetime > latest ? event.endDatetime : latest,
+                events[0].endDatetime
+            );
 
             // Adjust startTime and endTime to include extra hour padding
-            const adjustedStartTime = new Date(startTime.getTime() - 60 * 60 * 1000); // subtract one hour
-            const adjustedEndTime = new Date(endTime.getTime() + 60 * 60 * 1000); // add one hour
+            const adjustedStartTime = new Date(startTime);
+            adjustedStartTime.setMinutes(0, 0, 0); // Start at the beginning of the hour
+            adjustedStartTime.setHours(adjustedStartTime.getHours() - 1); // Subtract one hour
+            const adjustedEndTime = new Date(endTime);
+            adjustedEndTime.setMinutes(0, 0, 0); // End at the beginning of the hour
+            adjustedEndTime.setHours(adjustedEndTime.getHours() + 1); // Add one hour
 
+            // Calculate total hours
             const totalDurationMs = adjustedEndTime - adjustedStartTime;
+            const totalHours = totalDurationMs / (60 * 60 * 1000);
 
-            // Determine chart width dynamically
-            const pixelsPerHour = 100; // Adjust for desired scale
-            const pixelsPerMs = pixelsPerHour / (60 * 60 * 1000);
-            const chartWidth = totalDurationMs * pixelsPerMs + 100; // Added extra space for padding
+            // Pixels per hour
+            const pixelsPerHour = 100; // Adjust as needed
+            const chartWidth = totalHours * pixelsPerHour;
+            const ganttBodyWidth = chartWidth + 250;
 
-            // Calculate chart height based on number of events
-            const chartHeight = events.length * 80 + 50; // Adjusted for bar height and spacing
+            // Generate time scale with dates and hours
+            let timeScaleHTML = '';
+            let dateScaleHTML = '';
+            let verticalGridLinesHTML = '';
+            let currentHourTime = new Date(adjustedStartTime);
+            let lastDate = '';
 
-            // Generate vertical lines and time labels
-            let verticalLinesHTML = '';
-            let timeLabelsHTML = '';
-
-            const totalHours = Math.ceil(totalDurationMs / (60 * 60 * 1000));
-
+            let datePositions = []; // To record the positions where dates change
             for (let i = 0; i <= totalHours; i++) {
-                const currentTime = new Date(adjustedStartTime.getTime() + i * 60 * 60 * 1000);
-                const timeLabel = currentTime.toLocaleString('en-US', {
+                const leftPosition = i * pixelsPerHour;
+
+                // Get date label
+                const dateLabel = currentHourTime.toLocaleDateString('en-US', {
                     month: '2-digit',
                     day: '2-digit',
+                    year: 'numeric',
+                });
+
+                // Get hour label
+                const hourLabel = currentHourTime.toLocaleTimeString('en-US', {
                     hour12: false,
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                 });
-                const position = (currentTime - adjustedStartTime) * pixelsPerMs;
 
-                verticalLinesHTML += `<div class="vertical-line" style="left: ${position}px;"></div>`;
-                timeLabelsHTML += `<div class="time-label" style="left: ${position}px;">${timeLabel}</div>`;
+                // If the date changes, record the position
+                if (dateLabel !== lastDate) {
+                    datePositions.push({ position: leftPosition, label: dateLabel });
+                    lastDate = dateLabel;
+                }
+
+                // Add hour labels
+                timeScaleHTML += `
+            <div class="hour-label" style="left: ${leftPosition}px;">
+                ${hourLabel}
+            </div>
+        `;
+
+                // Add vertical grid lines
+                verticalGridLinesHTML += `
+            <div class="vertical-grid-line" style="left: ${leftPosition}px;"></div>
+        `;
+
+                // Increment currentHourTime by 1 hour
+                currentHourTime.setHours(currentHourTime.getHours() + 1);
             }
 
-            // Generate bars for each event
-            let eventBarsHTML = '';
-            events.forEach((event, index) => {
-                const eventStart = event.startDatetime;
-                const eventEnd = event.endDatetime;
-                const offsetMs = eventStart - adjustedStartTime;
-                const durationMs = eventEnd - eventStart;
-                const barPosition = offsetMs * pixelsPerMs;
-                const barWidth = durationMs * pixelsPerMs;
-                const barTop = index * 80; // Adjusted for bar height and spacing
+            // Generate date labels spanning appropriate hours
+            for (let i = 0; i < datePositions.length; i++) {
+                const currentPos = datePositions[i].position;
+                const nextPos =
+                    i + 1 < datePositions.length
+                        ? datePositions[i + 1].position
+                        : totalHours * pixelsPerHour;
+                const width = nextPos - currentPos;
+                const dateLabel = datePositions[i].label;
 
-                eventBarsHTML += `
-                    <div class="bar" style="top: ${barTop}px; left: ${barPosition}px; width: ${barWidth}px;">
-                        <strong>${event.label}</strong><br>${event.date}<br>${event.time} - ${event.endTime}
+                dateScaleHTML += `
+            <div class="date-label" style="left: ${currentPos}px; width: ${width}px;">
+                ${dateLabel}
+            </div>
+        `;
+            }
+
+            // Generate rows for each event
+            let eventRowsHTML = '';
+            events.forEach((event, index) => {
+                // Calculate event start and end times in milliseconds since adjustedStartTime
+                let eventStartMs = event.startDatetime - adjustedStartTime;
+                let eventEndMs = event.endDatetime - adjustedStartTime;
+
+                // Handle events that span over midnight
+                if (eventEndMs <= eventStartMs) {
+                    // Event ends on the next day
+                    eventEndMs += 24 * 60 * 60 * 1000;
+                }
+
+                // Calculate bar position and width
+                let barLeft = (eventStartMs / totalDurationMs) * chartWidth;
+                let barRight = (eventEndMs / totalDurationMs) * chartWidth;
+                let barWidth = barRight - barLeft;
+
+                // Ensure that barLeft and barWidth are precise numbers
+                barLeft = Math.round(barLeft);
+                barWidth = Math.round(barWidth);
+
+                // Single part event
+                eventRowsHTML += `
+            <div class="gantt-row">
+                <div class="event-column">${event.label.split(' ')[0]}</div>
+                <div class="number-column">${event.label.split(' ')[1]}</div>
+                <div class="gantt-bar-container">
+                    ${verticalGridLinesHTML}
+                    <div class="gantt-bar" style="left: ${barLeft}px; width: ${barWidth}px;">
+                        ${event.time} - ${event.endTime}
                     </div>
-                `;
+                </div>
+            </div>
+        `;
             });
 
             // Generate Gantt chart content
-            let ganttHTML = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Gantt Chart</title>
-                    <style>
-                        body {
-                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                            margin: 0;
-                            padding: 0;
-                            height: 100vh;
-                            display: flex;
-                            flex-direction: column;
-                        }
-                        h1 {
-                            text-align: center;
-                            margin: 20px 0;
-                        }
-                        .gantt-chart {
-                            flex: 1;
-                            position: relative;
-                            width: 100%;
-                            overflow: auto;
-                            border-top: 1px solid #ccc;
-                        }
-                        .chart {
-                            position: relative;
-                            width: ${chartWidth}px;
-                            height: ${chartHeight}px;
-                            padding-left: 50px; /* Added padding to prevent time labels from being cut off */
-                            padding-right: 50px;
-                            margin-top: 30px; /* Height of the time-scale */
-                        }
-                        .bar {
-                            position: absolute;
-                            min-height: 60px; /* Increased height for readability */
-                            background-color: #7f53ac;
-                            color: #fff;
-                            text-align: center;
-                            padding: 10px; /* Increased padding */
-                            border-radius: 5px;
-                            overflow: hidden;
-                            white-space: normal; /* Allow line breaks */
-                            word-wrap: break-word; /* Wrap long words */
-                            font-size: 14px;
-                            box-sizing: border-box;
-                            z-index: 1;
-                        }
-                        .vertical-line {
-                            position: absolute;
-                            top: 0;
-                            width: 1px;
-                            background-color: #ccc;
-                            height: ${chartHeight}px;
-                        }
-                        .time-scale {
-                            position: sticky;
-                            top: 0;
-                            width: 100%;
-                            height: 30px;
-                            background-color: #f9f9f9;
-                            border-bottom: 1px solid #ccc;
-                            z-index: 2;
-                            padding-left: 50px;
-                            padding-right: 50px;
-                        }
-                        .time-label {
-                            position: absolute;
-                            top: 0;
-                            transform: translateX(-50%);
-                            font-size: 12px;
-                            white-space: nowrap;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <h1>Gantt Chart</h1>
-                    <div class="gantt-chart">
-                        <div class="time-scale">
-                            ${timeLabelsHTML}
+            const ganttHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Gantt Chart</title>
+            <style>
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f0f0f0;
+                }
+                h1 {
+                    text-align: center;
+                    margin: 20px 0;
+                }
+                .gantt-container {
+                    display: flex;
+                    flex-direction: column;
+                    margin: 0 20px;
+                }
+                .gantt-header {
+                    display: flex;
+                    position: relative;
+                    background-color: #fff;
+                    border-bottom: 1px solid #ccc;
+                }
+                .event-column-header,
+                .number-column-header {
+                    width: 120px;
+                    min-width: 120px;
+                    padding: 10px;
+                    text-align: center;
+                    font-weight: bold;
+                    background-color: #f9f9f9;
+                    border-right: 1px solid #ccc;
+                    box-sizing: border-box;
+                    z-index: 4;
+                }
+                .time-scale {
+                    position: relative;
+                    width: ${chartWidth}px;
+                    background-color: #fff;
+                    overflow: hidden;
+                }
+                .date-label {
+                    position: absolute;
+                    top: 0;
+                    height: 30px;
+                    background-color: #e0e0e0;
+                    text-align: center;
+                    line-height: 30px;
+                    font-weight: bold;
+                    border-right: 1px solid #ccc;
+                    box-sizing: border-box;
+                    z-index: 3;
+                }
+                .hour-label {
+                    position: absolute;
+                    top: 0px;
+                    width: ${pixelsPerHour}px;
+                    height: 30px;
+                    text-align: center;
+                    line-height: 30px;
+                    border-right: 1px solid #ccc;
+                    box-sizing: border-box;
+                    background-color: #f9f9f9;
+                    z-index: 3;
+                }
+                .vertical-grid-line {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    width: 1px;
+                    background-color: #ccc;
+                    z-index: 1;
+                }
+                .gantt-body {
+                    display: flex;
+                    flex-direction: column;
+                    background-color: #fff;
+                    min-width: ${ganttBodyWidth}px;
+                }
+                .gantt-row {
+                    display: flex;
+                    position: relative;
+                    border-bottom: 1px solid #ccc;
+                    height: 50px;
+                }
+                .event-column,
+                .number-column {
+                    width: 120px;
+                    min-width: 120px;
+                    padding: 10px;
+                    text-align: center;
+                    border-right: 1px solid #ccc;
+                    box-sizing: border-box;
+                    background-color: #fff;
+                    z-index: 2;
+                }
+                .gantt-bar-container {
+                    position: relative;
+                    width: ${chartWidth}px;
+                    overflow: hidden;
+                }
+                .gantt-bar-container .vertical-grid-line {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    width: 1px;
+                    background-color: #ccc;
+                    z-index: 1;
+                }
+                .gantt-bar {
+                    position: absolute;
+                    top: 10px;
+                    height: 30px;
+                    background-color: #7f53ac;
+                    color: #fff;
+                    text-align: center;
+                    line-height: 30px;
+                    border-radius: 5px;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    padding: 0 0px;
+                    z-index: 2;
+                }
+                /* Fix the header */
+                .gantt-header {
+                    position: sticky;
+                    top: 0;
+                    z-index: 3;
+                }
+                /* Fix the left columns */
+                .event-column-header,
+                .number-column-header,
+                .event-column,
+                .number-column {
+                    position: sticky;
+                    left: 0;
+                    z-index: 4;
+                    background-color: #fff;
+                }
+                .number-column-header,
+                .number-column {
+                    left: 120px;
+                }
+                /* Scrollbars */
+                .gantt-container {
+                    overflow: auto;
+                }
+                .time-scale,
+                .gantt-bar-container {
+                    min-width: ${chartWidth}px;
+                }
+                /* Grid Lines */
+                .gantt-body .gantt-row:nth-child(even) {
+                    background-color: #f9f9f9;
+                }
+                /* Hour subheader styles */
+                .date-row {
+                    position: relative;
+                    display: flex;
+                    height: 30px;
+                }
+                .hour-row {
+                    position: relative;
+                    display: flex;
+                    height: 30px;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Gantt Chart</h1>
+            <div class="gantt-container">
+                <!-- Header -->
+                <div class="gantt-header">
+                    <div class="event-column-header">Event</div>
+                    <div class="number-column-header">Number</div>
+                    <div class="time-scale">
+                        <!-- Date Row -->
+                        <div class="date-row">
+                            ${dateScaleHTML}
                         </div>
-                        <div class="chart">
-                            ${verticalLinesHTML}
-                            ${eventBarsHTML}
+                        <!-- Hour Row -->
+                        <div class="hour-row">
+                            ${timeScaleHTML}
                         </div>
+                        <!-- Vertical Grid Lines -->
+                        ${verticalGridLinesHTML}
                     </div>
-                </body>
-                </html>
-            `;
+                </div>
+                <!-- Body -->
+                <div class="gantt-body">
+                    ${eventRowsHTML}
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
 
             // Write content to the new window
             ganttWindow.document.write(ganttHTML);

@@ -3,7 +3,6 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DOC Helper</title>
     <style>
         /* Reset and base styles */
@@ -13,22 +12,27 @@
             padding: 0;
         }
 
+        /* Removed height: 100% to allow body to expand with content */
+        /* html, body {
+            height: 100%;
+        } */
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #1f1c2c, #928dab);
             color: #333;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            padding: 40px 20px;
+            /* Removed overflow: hidden to allow scrolling */
+            /* overflow: hidden; */
+            padding: 20px;
         }
 
         h1 {
             text-align: center;
             color: #fff;
-            margin-bottom: 30px;
+            margin: 20px 0;
             font-size: 2.5em;
             letter-spacing: 1px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
@@ -36,12 +40,17 @@
 
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 1200px;
             background-color: rgba(255, 255, 255, 0.9);
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            /* Removed flex: 1 and overflow: hidden */
+            /* flex: 1; */
+            /* overflow: hidden; */
         }
 
         .form-group {
@@ -58,18 +67,21 @@
 
         input[type="text"],
         input[type="time"],
-        input[type="number"] {
+        input[type="number"],
+        input[type="date"] {
             padding: 12px;
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 8px;
             outline: none;
             transition: border-color 0.3s ease;
+            width: 100%;
         }
 
         input[type="text"]:focus,
         input[type="time"]:focus,
-        input[type="number"]:focus {
+        input[type="number"]:focus,
+        input[type="date"]:focus {
             border-color: #7f53ac;
         }
 
@@ -95,21 +107,6 @@
             transform: scale(0.98);
         }
 
-        .results {
-            margin-top: 30px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .results div {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 5px solid #7f53ac;
-            animation: fadeIn 0.5s ease;
-        }
-
         .additional-event {
             margin-bottom: 20px;
             padding-top: 20px;
@@ -124,65 +121,56 @@
         /* Timeline styles */
         .timeline-container {
             display: flex;
-            overflow-x: auto;
+            flex-direction: column;
             margin-top: 30px;
-            padding-bottom: 10px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            /* Removed flex: 1 to allow natural height */
+            /* flex: 1; */
+        }
+
+        .timeline-row {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+            border-radius: 8px;
         }
 
         .timeline-item {
-            background-color: #fff;
-            color: #333;
+            background-color: #7f53ac;
+            color: #fff;
             padding: 15px;
             margin-right: 20px;
             border-radius: 10px;
-            min-width: 120px;
+            min-width: 200px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            animation: slideIn 0.5s ease;
-            position: relative;
+            flex-shrink: 0;
         }
 
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: -10px;
-            transform: translateY(-50%);
-            width: 10px;
-            height: 10px;
-            background-color: #7f53ac;
-            border-radius: 50%;
+        .timeline-item:last-child {
+            margin-right: 0;
         }
 
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Scrollbar styling for webkit browsers */
+        .timeline-row::-webkit-scrollbar {
+            height: 8px;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
+        .timeline-row::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
 
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        .timeline-row::-webkit-scrollbar-thumb {
+            background: #7f53ac;
+            border-radius: 4px;
         }
 
         /* Responsive Design */
         @media (max-width: 600px) {
             body {
-                padding: 20px;
+                padding: 10px;
             }
 
             .container {
@@ -192,6 +180,10 @@
             h1 {
                 font-size: 2em;
             }
+
+            .timeline-item {
+                min-width: 150px;
+            }
         }
     </style>
 </head>
@@ -199,6 +191,11 @@
 <body>
     <h1>DOC Helper</h1>
     <div class="container">
+        <!-- Form Inputs -->
+        <div class="form-group">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" value="">
+        </div>
         <div class="form-group">
             <label for="startTime">Start Time</label>
             <input type="time" id="startTime" value="21:00">
@@ -212,22 +209,28 @@
             <input type="number" id="numEvents" value="8" min="1">
         </div>
         <div class="form-group">
-            <label for="interval">Interval (hh:mm)</label>
+            <label for="interval">Interval Between Events (hh:mm)</label>
             <input type="text" id="interval" placeholder="e.g., 01:05" value="01:05">
         </div>
+        <div class="form-group">
+            <label for="duration">Event Duration (hh:mm)</label>
+            <input type="text" id="duration" placeholder="e.g., 00:30" value="01:00">
+        </div>
         <div id="additionalEventsContainer"></div>
+
+        <!-- Buttons -->
         <button id="addEventBtn">Add Additional Event</button>
         <button id="calculateBtn">Calculate</button>
-        <button id="downloadBtn" disabled>Download CSV</button> <!-- New Download Button -->
+        <button id="downloadBtn" disabled>Download CSV</button>
+        <button id="ganttBtn" disabled>View Gantt Chart</button>
 
-        <div class="results" id="results"></div>
         <!-- Timeline container -->
         <div class="timeline-container" id="timelineContainer"></div>
     </div>
 
     <script>
         let eventCounter = 1;
-        let events = []; // Moved events array to global scope
+        let events = [];
 
         // Function to add additional event inputs
         function addAdditionalEvent() {
@@ -242,12 +245,24 @@
                     <input type="text" id="eventTitle${eventCounter}" placeholder="Enter event title" value="Event ${eventCounter}">
                 </div>
                 <div class="form-group">
+                    <label for="startDate${eventCounter}">Start Date</label>
+                    <input type="date" id="startDate${eventCounter}" value="">
+                </div>
+                <div class="form-group">
+                    <label for="startTime${eventCounter}">Start Time</label>
+                    <input type="time" id="startTime${eventCounter}" value="21:00">
+                </div>
+                <div class="form-group">
                     <label for="numEvents${eventCounter}">Number of Events</label>
                     <input type="number" id="numEvents${eventCounter}" value="5" min="1">
                 </div>
                 <div class="form-group">
-                    <label for="interval${eventCounter}">Interval (hh:mm)</label>
+                    <label for="interval${eventCounter}">Interval Between Events (hh:mm)</label>
                     <input type="text" id="interval${eventCounter}" placeholder="e.g., 01:00" value="01:00">
+                </div>
+                <div class="form-group">
+                    <label for="duration${eventCounter}">Event Duration (hh:mm)</label>
+                    <input type="text" id="duration${eventCounter}" placeholder="e.g., 00:30" value="01:00">
                 </div>
             `;
             container.appendChild(eventSection);
@@ -257,80 +272,127 @@
 
         // Function to calculate all event times
         function calculateTimes() {
-            const startTime = document.getElementById('startTime').value;
-            const resultsDiv = document.getElementById('results');
             const timelineContainer = document.getElementById('timelineContainer');
-            resultsDiv.innerHTML = ''; // Clear previous results
             timelineContainer.innerHTML = ''; // Clear previous timeline
 
             events = []; // Reset events array
-            let currentHour, currentMinute;
-            let eventNumber = 1; // Global event counter
-
-            function calculateEventTimes(eventTitle, startHour, startMinute, numEvents, intervalHours, intervalMinutes) {
-                for (let i = 0; i < numEvents; i++) {
-                    startMinute += intervalMinutes;
-                    startHour += intervalHours + Math.floor(startMinute / 60);
-                    startMinute = startMinute % 60;
-                    startHour = startHour % 24;
-                    const timeString = `${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
-                    events.push({ label: `${eventTitle} ${i + 1}`, time: timeString }); // Store event label and time
-                    eventNumber++;
-                }
-                currentHour = startHour;
-                currentMinute = startMinute;
-            }
 
             // Initial event set
+            const startDate = document.getElementById('startDate').value;
+            const startTime = document.getElementById('startTime').value;
+
             const eventTitle = document.getElementById('eventTitle').value || `Event 1`;
             const numEvents = parseInt(document.getElementById('numEvents').value);
             const interval = document.getElementById('interval').value;
             let [intervalHours, intervalMinutes] = interval.split(':').map(Number);
-            let [startHour, startMinute] = startTime.split(':').map(Number);
+            const duration = document.getElementById('duration').value;
+            let [durationHours, durationMinutes] = duration.split(':').map(Number);
 
             // Validate initial inputs
-            if (isNaN(numEvents) || isNaN(intervalHours) || isNaN(intervalMinutes) || isNaN(startHour) || isNaN(startMinute)) {
+            if (
+                !startDate ||
+                !startTime ||
+                isNaN(numEvents) || isNaN(intervalHours) || isNaN(intervalMinutes) ||
+                isNaN(durationHours) || isNaN(durationMinutes)
+            ) {
                 alert('Please enter valid numbers for the initial event set.');
                 return;
             }
 
             // Calculate initial set of events
-            calculateEventTimes(eventTitle, startHour, startMinute, numEvents, intervalHours, intervalMinutes);
+            calculateEventTimes(eventTitle, numEvents, intervalHours, intervalMinutes, durationHours, durationMinutes, startDate, startTime);
 
             // Process additional event sets
             for (let i = 2; i <= eventCounter; i++) {
+                const additionalStartDate = document.getElementById(`startDate${i}`).value;
+                const additionalStartTime = document.getElementById(`startTime${i}`).value;
+
                 const additionalEventTitle = document.getElementById(`eventTitle${i}`).value || `Event ${i}`;
                 const additionalNumEvents = parseInt(document.getElementById(`numEvents${i}`).value);
                 const additionalInterval = document.getElementById(`interval${i}`).value;
                 let [addIntervalHours, addIntervalMinutes] = additionalInterval.split(':').map(Number);
+                const additionalDuration = document.getElementById(`duration${i}`).value;
+                let [addDurationHours, addDurationMinutes] = additionalDuration.split(':').map(Number);
 
-                // Validate additional inputs
-                if (isNaN(additionalNumEvents) || isNaN(addIntervalHours) || isNaN(addIntervalMinutes)) {
+                if (
+                    !additionalStartDate ||
+                    !additionalStartTime ||
+                    isNaN(additionalNumEvents) || isNaN(addIntervalHours) || isNaN(addIntervalMinutes) ||
+                    isNaN(addDurationHours) || isNaN(addDurationMinutes)
+                ) {
                     alert(`Please enter valid numbers for event set ${i}.`);
                     return;
                 }
 
-                calculateEventTimes(additionalEventTitle, currentHour, currentMinute, additionalNumEvents, addIntervalHours, addIntervalMinutes);
+                calculateEventTimes(
+                    additionalEventTitle,
+                    additionalNumEvents,
+                    addIntervalHours,
+                    addIntervalMinutes,
+                    addDurationHours,
+                    addDurationMinutes,
+                    additionalStartDate,
+                    additionalStartTime
+                );
             }
 
-            // Display all events in the results div
-            events.forEach(event => {
-                const timeElement = document.createElement('div');
-                timeElement.textContent = `${event.label}: ${event.time}`; // Show event label and time
-                resultsDiv.appendChild(timeElement);
+            // Enable the download and Gantt chart buttons
+            document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('ganttBtn').disabled = false;
 
-                // Also display in the timeline
+            // Smooth scroll to the timeline
+            timelineContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Function to calculate event times for an event set
+        function calculateEventTimes(eventTitle, numEvents, intervalHours, intervalMinutes, durationHours, durationMinutes, startDate, startTime) {
+            let [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+            let [startHour, startMinute] = startTime.split(':').map(Number);
+
+            let currentDate = new Date(startYear, startMonth - 1, startDay, startHour, startMinute, 0, 0);
+
+            let eventRow = [];
+            for (let i = 0; i < numEvents; i++) {
+                // Calculate event start time
+                let eventStart = new Date(currentDate.getTime());
+
+                // Calculate event end time
+                let eventEnd = new Date(eventStart.getTime());
+                eventEnd.setHours(eventEnd.getHours() + durationHours);
+                eventEnd.setMinutes(eventEnd.getMinutes() + durationMinutes);
+
+                // Get date and time in desired format
+                const dateOptions = { month: '2-digit', day: '2-digit', year: 'numeric' };
+                const dateString = eventStart.toLocaleDateString('en-US', dateOptions);
+                const timeOptions = { hour12: false, hour: '2-digit', minute: '2-digit' };
+                const timeString = eventStart.toLocaleTimeString('en-US', timeOptions);
+                const endTimeString = eventEnd.toLocaleTimeString('en-US', timeOptions);
+
+                events.push({
+                    label: `${eventTitle} ${i + 1}`,
+                    date: dateString,
+                    time: timeString,
+                    endTime: endTimeString,
+                    startDatetime: eventStart,
+                    endDatetime: eventEnd
+                });
+
+                // Create timeline item
                 const timelineItem = document.createElement('div');
                 timelineItem.className = 'timeline-item';
-                timelineItem.innerHTML = `<strong>${event.label}</strong><br>${event.time}`;
-                timelineContainer.appendChild(timelineItem);
-            });
+                timelineItem.innerHTML = `<strong>${eventTitle} ${i + 1}</strong><br>${dateString}<br>${timeString} - ${endTimeString}`;
+                eventRow.push(timelineItem);
 
-            // Enable the download button
-            document.getElementById('downloadBtn').disabled = false;
+                // Update currentDate by adding interval
+                currentDate.setHours(currentDate.getHours() + intervalHours);
+                currentDate.setMinutes(currentDate.getMinutes() + intervalMinutes);
+            }
 
-            // Smooth scroll to the results
-            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            // Create a row for the event set
+            const timelineRow = document.createElement('div');
+            timelineRow.className = 'timeline-row';
+            eventRow.forEach(item => timelineRow.appendChild(item));
+            document.getElementById('timelineContainer').appendChild(timelineRow);
         }
 
         // Function to download events as CSV
@@ -341,10 +403,10 @@
             }
 
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Event Label,Time\n"; // Header row
+            csvContent += "Event Label,Date,Start Time,End Time\n"; // Header row
 
             events.forEach(event => {
-                csvContent += `${event.label},${event.time}\n`;
+                csvContent += `${event.label},${event.date},${event.time},${event.endTime}\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -358,10 +420,174 @@
             document.body.removeChild(link); // Clean up
         }
 
+        // Function to show Gantt chart in a new tab
+        function showGanttChart() {
+            if (events.length === 0) {
+                alert('No events to display. Please calculate the events first.');
+                return;
+            }
+
+            // Open a new window
+            const ganttWindow = window.open('', '_blank');
+
+            // Calculate the time span
+            let startTime = events.reduce((earliest, event) => event.startDatetime < earliest ? event.startDatetime : earliest, events[0].startDatetime);
+            let endTime = events.reduce((latest, event) => event.endDatetime > latest ? event.endDatetime : latest, events[0].endDatetime);
+
+            // Adjust startTime and endTime to include extra hour padding
+            const adjustedStartTime = new Date(startTime.getTime() - 60 * 60 * 1000); // subtract one hour
+            const adjustedEndTime = new Date(endTime.getTime() + 60 * 60 * 1000); // add one hour
+
+            const totalDurationMs = adjustedEndTime - adjustedStartTime;
+
+            // Determine chart width dynamically
+            const pixelsPerHour = 100; // Adjust for desired scale
+            const pixelsPerMs = pixelsPerHour / (60 * 60 * 1000);
+            const chartWidth = totalDurationMs * pixelsPerMs + 100; // Added extra space for padding
+
+            // Calculate chart height based on number of events
+            const chartHeight = events.length * 80 + 50; // Adjusted for bar height and spacing
+
+            // Generate vertical lines and time labels
+            let verticalLinesHTML = '';
+            let timeLabelsHTML = '';
+
+            const totalHours = Math.ceil(totalDurationMs / (60 * 60 * 1000));
+
+            for (let i = 0; i <= totalHours; i++) {
+                const currentTime = new Date(adjustedStartTime.getTime() + i * 60 * 60 * 1000);
+                const timeLabel = currentTime.toLocaleString('en-US', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const position = (currentTime - adjustedStartTime) * pixelsPerMs;
+
+                verticalLinesHTML += `<div class="vertical-line" style="left: ${position}px;"></div>`;
+                timeLabelsHTML += `<div class="time-label" style="left: ${position}px;">${timeLabel}</div>`;
+            }
+
+            // Generate bars for each event
+            let eventBarsHTML = '';
+            events.forEach((event, index) => {
+                const eventStart = event.startDatetime;
+                const eventEnd = event.endDatetime;
+                const offsetMs = eventStart - adjustedStartTime;
+                const durationMs = eventEnd - eventStart;
+                const barPosition = offsetMs * pixelsPerMs;
+                const barWidth = durationMs * pixelsPerMs;
+                const barTop = index * 80; // Adjusted for bar height and spacing
+
+                eventBarsHTML += `
+                    <div class="bar" style="top: ${barTop}px; left: ${barPosition}px; width: ${barWidth}px;">
+                        <strong>${event.label}</strong><br>${event.date}<br>${event.time} - ${event.endTime}
+                    </div>
+                `;
+            });
+
+            // Generate Gantt chart content
+            let ganttHTML = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Gantt Chart</title>
+                    <style>
+                        body {
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            margin: 0;
+                            padding: 0;
+                            height: 100vh;
+                            display: flex;
+                            flex-direction: column;
+                        }
+                        h1 {
+                            text-align: center;
+                            margin: 20px 0;
+                        }
+                        .gantt-chart {
+                            flex: 1;
+                            position: relative;
+                            width: 100%;
+                            overflow: auto;
+                            border-top: 1px solid #ccc;
+                        }
+                        .chart {
+                            position: relative;
+                            width: ${chartWidth}px;
+                            height: ${chartHeight}px;
+                            padding-left: 50px; /* Added padding to prevent time labels from being cut off */
+                            padding-right: 50px;
+                            margin-top: 30px; /* Height of the time-scale */
+                        }
+                        .bar {
+                            position: absolute;
+                            min-height: 60px; /* Increased height for readability */
+                            background-color: #7f53ac;
+                            color: #fff;
+                            text-align: center;
+                            padding: 10px; /* Increased padding */
+                            border-radius: 5px;
+                            overflow: hidden;
+                            white-space: normal; /* Allow line breaks */
+                            word-wrap: break-word; /* Wrap long words */
+                            font-size: 14px;
+                            box-sizing: border-box;
+                            z-index: 1;
+                        }
+                        .vertical-line {
+                            position: absolute;
+                            top: 0;
+                            width: 1px;
+                            background-color: #ccc;
+                            height: ${chartHeight}px;
+                        }
+                        .time-scale {
+                            position: sticky;
+                            top: 0;
+                            width: 100%;
+                            height: 30px;
+                            background-color: #f9f9f9;
+                            border-bottom: 1px solid #ccc;
+                            z-index: 2;
+                            padding-left: 50px;
+                            padding-right: 50px;
+                        }
+                        .time-label {
+                            position: absolute;
+                            top: 0;
+                            transform: translateX(-50%);
+                            font-size: 12px;
+                            white-space: nowrap;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Gantt Chart</h1>
+                    <div class="gantt-chart">
+                        <div class="time-scale">
+                            ${timeLabelsHTML}
+                        </div>
+                        <div class="chart">
+                            ${verticalLinesHTML}
+                            ${eventBarsHTML}
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+
+            // Write content to the new window
+            ganttWindow.document.write(ganttHTML);
+            ganttWindow.document.close();
+        }
+
         // Event listeners for buttons
         document.getElementById('addEventBtn').addEventListener('click', addAdditionalEvent);
         document.getElementById('calculateBtn').addEventListener('click', calculateTimes);
         document.getElementById('downloadBtn').addEventListener('click', downloadCSV);
+        document.getElementById('ganttBtn').addEventListener('click', showGanttChart);
     </script>
 </body>
 
